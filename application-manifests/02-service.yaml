@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: example-app-svc-lb
+  namespace: prd
+  # annotations:
+  #   external-dns.alpha.kubernetes.io/hostname: example-app-server.test.com.br
+spec:
+  ports:
+  - name: http
+    port: 80
+    protocol: TCP
+    targetPort: 5000
+  selector:
+    app: example-app
+  type: LoadBalancer  

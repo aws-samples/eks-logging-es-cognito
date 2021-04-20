@@ -1,0 +1,30 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Principal": {
+        "AWS": "*"
+      },
+      "Action": "es:*",
+      "Resource": "arn:aws:es:us-east-1:936068047509:domain/eksdemologging/*",
+      "Condition": {
+        "IpAddress": {
+          "aws:SourceIp": [
+            "189.38.141.176/32",
+            "44.192.101.157/32",
+            "3.84.17.152"
+          ]
+        }
+      }
+    },
+    {
+      "Effect": "Allow",
+      "Principal": {
+        "AWS": "arn:aws:iam::936068047509:role/Cognito_eksescognitoAuth_Role"
+      },
+      "Action": "es:ESHttp*",
+      "Resource": "arn:aws:es:us-east-1:936068047509:domain/eksdemologging/*"
+    }
+  ]
+}
