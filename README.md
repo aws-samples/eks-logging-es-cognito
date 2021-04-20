@@ -2,6 +2,13 @@
 
 This demonstration has the purpose of presenting how you can easyly integrate EKS logs with Amazon Elasticsearch service and secure the access to the logs using Amazon Cognito.
 
+## Architecture
+
+
+<p align="center"> 
+<img src="images/EKS-Log-Architecture.png">
+</p>
+
 ## Pre Reqs
 
 - eksctl
