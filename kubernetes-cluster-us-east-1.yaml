@@ -2,7 +2,7 @@ apiVersion: eksctl.io/v1alpha5
 kind: ClusterConfig
 # It will create a dedicated VPC for the cluster
 metadata:
-  name: kubefed-cluster
+  name: kubelogs-cluster
   region: us-east-1
   version: "1.18"
 
