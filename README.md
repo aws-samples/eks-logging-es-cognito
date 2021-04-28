@@ -77,6 +77,32 @@ aws cloudformation create-stack \
 
 ## Creating Cognito User to Access Kibana Dashboard
 
+Access the AWS console and search for Cognito in services.
+
+<p align="center"> 
+<img src="images/cognito01.png">
+</p>
+
+Click on Manage User Pools.
+
+<p align="center"> 
+<img src="images/cognito02.png">
+</p>
+
+Access the UserPool `KibanaUsers`.
+
+<p align="center"> 
+<img src="images/cognito03.png">
+</p>
+
+Select Users and groups and Create user.
+
+<p align="center"> 
+<img src="images/cognito04.png">
+</p>
+
+Fill the requireds and click on `Create user`.
+
 ## References
 
 https://docs.aws.amazon.com/elasticsearch-service/latest/developerguide/es-cognito-auth.html
