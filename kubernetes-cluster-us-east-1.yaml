@@ -3,10 +3,10 @@ kind: ClusterConfig
 # It will create a dedicated VPC for the cluster
 metadata:
   name: kubelogs-cluster
-  region: us-east-1
+  region: us-east-2
   version: "1.18"
 
-availabilityZones: ["us-east-1a", "us-east-1b", "us-east-1c"]
+availabilityZones: ["us-east-2a", "us-east-2b", "us-east-2c"]
 
 managedNodeGroups:
 - name: nodegroup

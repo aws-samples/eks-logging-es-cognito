@@ -2,10 +2,10 @@ AWSTemplateFormatVersion: 2010-09-09
 Description: Stack to provision ElasticSearch integrated with Amazon Cognito
 
 Parameters:
-  MyPublicIP:
-    Description: Public IP to access Kibana
-    Type: String
-    Default: changeme
+  EksInstancesIps:
+    Type: CommaDelimitedList
+    Description: The list of IPs of the EKS nodes and your own public IP
+    Default: 18.220.19.250, 3.19.221.120, 3.129.10.94
 
 Resources:
   # User Pool to store User Information
@@ -127,8 +127,7 @@ Resources:
           Resource: !Sub 'arn:aws:es:${AWS::Region}:${AWS::AccountId}:domain/es-eks-log-demo/*'
           Condition:
             IpAddress:
-              aws:SourceIp:
-                - !Ref MyPublicIP
+              aws:SourceIp: !Ref EksInstancesIps
     DependsOn: UserPool  
 
 Outputs:

@@ -9,6 +9,8 @@ This demonstration has the purpose of presenting how you can easyly integrate EK
 <img src="images/EKS-Log-Architecture.png">
 </p>
 
+**This demonstration was tested in us-east-1 region**
+
 ## Pre Reqs
 
 - eksctl
@@ -35,6 +37,45 @@ This will update your kube config file, now let's test if we can access our clus
 ```shell
 kubectl get nodes
 ```
+
+### Get Public IP of EC2 EKS Instances
+
+We will use this instances IP's to allow fluentbit to publish logs to our Elasticsearch cluster.
+
+```shell
+aws ec2 describe-instances --filter 'Name=tag:Name,Values=kubelogs-cluster*' --query 'Reservations[*].Instances[*].PublicIpAddress' --region us-east-1 | jq
+```
+
+The output will look like the following.
+
+```json
+[
+  [
+    "18.220.19.250"
+  ],
+  [
+    "3.19.221.120"
+  ],
+  [
+    "3.129.10.94"
+  ]
+]
+```
+
+## Creating our Amazon Elasticsearch cluster with Cognito integration
+
+In this repository you will find a CloudFormation template that will create all the components that we need to integrate Amazon Elasticsearch with Amazon Cognito.
+
+```shell
+aws cloudformation create-stack \
+    --stack-name kubelogs-es-stack \
+    --template-body file://cludformation/stack.yaml \
+    --capabilities CAPABILITY_IAM \
+    --region us-east-1 \
+    --parameters ParameterKey=EksInstancesIps,ParameterValue={IPS_SEPARETED_BY_COMMA}
+```
+
+## Creating Cognito User to Access Kibana Dashboard
 
 ## References
 
