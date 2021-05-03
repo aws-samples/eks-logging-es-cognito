@@ -14,7 +14,6 @@ This demonstration has the purpose of presenting how you can easyly integrate EK
 ## Pre Reqs
 
 - eksctl
-- Helm 3+
 - awscli
 - kubectl
 
@@ -38,28 +37,56 @@ This will update your kube config file, now let's test if we can access our clus
 kubectl get nodes
 ```
 
-### Get Public IP of EC2 EKS Instances
+## Fluent-bit IAM Role for Service Account 
 
-We will use this instances IP's to allow fluentbit to publish logs to our Elasticsearch cluster.
+To use IAM roles for service accounts in your cluster, we will first create an OIDC identity provider.
 
 ```shell
-aws ec2 describe-instances --filter 'Name=tag:Name,Values=kubelogs-cluster*' --query 'Reservations[*].Instances[*].PublicIpAddress' --region us-east-1 | jq
+eksctl utils associate-iam-oidc-provider \
+    --cluster kubelogs-cluster \
+    --approve
 ```
 
-The output will look like the following.
+Next, we will create an IAM policy that limits the permissions needed by the Fluent Bit containers to connect to the Elasticsearch cluster. We will also create an IAM role for your Kubernetes service accounts to use before you associate it with a service account.
 
-```json
-[
-  [
-    "18.220.19.250"
-  ],
-  [
-    "3.19.221.120"
-  ],
-  [
-    "3.129.10.94"
-  ]
-]
+```shell
+
+export ES_DOMAIN_NAME="es-eks-log-demo"
+export ACCOUNT_ID="your aws account id"
+export AWS_REGION="your aws region"
+
+cat <<EoF > ./fluent-bit-policy.json
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Action": [
+                "es:ESHttp*"
+            ],
+            "Resource": "arn:aws:es:${AWS_REGION}:${ACCOUNT_ID}:domain/${ES_DOMAIN_NAME}",
+            "Effect": "Allow"
+        }
+    ]
+}
+EoF
+
+aws iam create-policy   \
+  --policy-name fluent-bit-policy \
+  --policy-document file://./fluent-bit-policy.json
+```
+
+Finally, create an IAM role for the fluent-bit Service Account in the logging namespace.
+
+```shell
+kubectl create namespace logging
+
+eksctl create iamserviceaccount \
+    --name fluent-bit \
+    --namespace logging \
+    --cluster eksworkshop-eksctl \
+    --attach-policy-arn "arn:aws:iam::${ACCOUNT_ID}:policy/fluent-bit-policy" \
+    --approve \
+    --override-existing-serviceaccounts
 ```
 
 ## Creating our Amazon Elasticsearch cluster with Cognito integration
@@ -72,7 +99,30 @@ aws cloudformation create-stack \
     --template-body file://cludformation/stack.yaml \
     --capabilities CAPABILITY_IAM \
     --region us-east-1 \
-    --parameters ParameterKey=EksInstancesIps,ParameterValue={IPS_SEPARETED_BY_COMMA}
+    --parameters ParameterKey=ArnFluentBit,ParameterValue={FLUENT_BIT_ROLE_ARN}
+```
+
+## Create Fluent-bit DaemonSet on Amazon EKS
+
+Let’s start by downloading the fluentbit.yaml deployment file and replace some variables.
+
+```shell
+export ES_ENDPOINT=$(aws es describe-elasticsearch-domain --domain-name ${ES_DOMAIN_NAME} --output text --query "DomainStatus.Endpoint")
+
+curl -Ss https://www.eksworkshop.com/intermediate/230_logging/deploy.files/fluentbit.yaml \
+    | envsubst > ./fluentbit.yaml
+```
+
+Explore the file to see what will be deployed. The fluent bit log agent configuration is located in the Kubernetes ConfigMap and will be deployed as a DaemonSet, i.e. one pod per worker node. In our case, a 3 node cluster is used and so 3 pods will be shown in the output when we deploy.
+
+```shell
+kubectl apply -f ./fluentbit.yaml
+```
+
+Wait for all of the pods to change to running status.
+
+```shell
+kubectl --namespace=logging get pods
 ```
 
 ## Creating Cognito User to Access Kibana Dashboard
@@ -103,6 +153,37 @@ Select Users and groups and Create user.
 
 Fill the requireds and click on `Create user`.
 
+## Access Kibana Using Your Cognito User
+
+Get the Kibana URL.
+
+```shell
+echo 'https://'$ES_ENDPOINT'/_plugin/kibana/'
+```
+
+The Cognito screen will show up, access it using your user created before.
+
+<p align="center"> 
+<img src="images/kibana01.png">
+</p>
+
+Now let's create the Index Pattern that we will use for discover.
+
+To create index patterns, complete the following steps:
+
+- On the navigation panel, choose `Stack Managment` to open the Management page.
+- Choose Index Patterns.
+- Choose Create index pattern.
+- For Index pattern, enter `fluent-*`.
+- For Time filter, choose `@timestamp.`
+- Choose Create index pattern.
+
+Now you can Access the `Discover` dashboard and you should see your application logs.
+
+
+## (Optional) Enable Cognito MFA
+
+If you want to add MFA to your cognito User Pool, follow this [link](./auth_flow/README.md)
 ## References
 
 https://docs.aws.amazon.com/elasticsearch-service/latest/developerguide/es-cognito-auth.html

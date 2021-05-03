@@ -4,14 +4,14 @@ kind: ClusterConfig
 metadata:
   name: kubelogs-cluster
   region: us-east-2
-  version: "1.18"
+  version: "1.19"
 
 availabilityZones: ["us-east-2a", "us-east-2b", "us-east-2c"]
 
 managedNodeGroups:
 - name: nodegroup
-  desiredCapacity: 3
-  instanceType: t3.micro # This host cluster is using the smallest EC2
+  desiredCapacity: 2
+  instanceType: t3.medium # This host cluster is using the smallest EC2
   ssh:
     enableSsm: true
   iam:

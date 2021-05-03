@@ -2,10 +2,9 @@ AWSTemplateFormatVersion: 2010-09-09
 Description: Stack to provision ElasticSearch integrated with Amazon Cognito
 
 Parameters:
-  EksInstancesIps:
-    Type: CommaDelimitedList
-    Description: The list of IPs of the EKS nodes and your own public IP
-    Default: 18.220.19.250, 3.19.221.120, 3.129.10.94
+  ArnFluentBit:
+    Type: String
+    Description: ARN of fluent-bit role
 
 Resources:
   # User Pool to store User Information
@@ -122,12 +121,9 @@ Resources:
         Statement:
         - Effect: Allow
           Principal:
-            AWS: '*'
+            AWS: !Ref ArnFluentBit
           Action: 'es:*'
           Resource: !Sub 'arn:aws:es:${AWS::Region}:${AWS::AccountId}:domain/es-eks-log-demo/*'
-          Condition:
-            IpAddress:
-              aws:SourceIp: !Ref EksInstancesIps
     DependsOn: UserPool  
 
 Outputs:
