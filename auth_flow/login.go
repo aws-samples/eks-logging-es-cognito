@@ -11,17 +11,17 @@ import (
     "github.com/aws/aws-sdk-go/service/cognitoidentityprovider"
 )
 
-// I hard-coded those here just to demonstrate how to make 
+ 
 // Cognito API calls. You should store this information 
 // in other way, because this way it would be possible 
 // to extract those strings from your compiled app if it 
 // leaks somewhere.
-const clientId = "430d83gse9u32apa7mmglfp4ug"
-const clientSecret = "1s67u4t6c7ir9gfli3k0a7edng3250ugqpgq274ojqhsc6orekfm"
+const clientId = ""
+const clientSecret = ""
 // This is the username and password of a user from your
 // Cognito user pool.
-const username = "lucasdu@amazon.com"
-const password = "V@itomanocu1"
+const username = ""
+const password = ""
 
 func main() {
     conf := &aws.Config{Region: aws.String("us-east-1")}

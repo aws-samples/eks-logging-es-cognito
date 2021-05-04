@@ -83,23 +83,29 @@ kubectl create namespace logging
 eksctl create iamserviceaccount \
     --name fluent-bit \
     --namespace logging \
-    --cluster eksworkshop-eksctl \
+    --cluster kubelogs-cluster \
     --attach-policy-arn "arn:aws:iam::${ACCOUNT_ID}:policy/fluent-bit-policy" \
     --approve \
     --override-existing-serviceaccounts
 ```
 
+Export the Fluent-bit role ARN.
+
+```shell
+export FLUENT_BIT_ROLE_ARN=$(kubectl get sa fluent-bit -nlogging -oyaml | grep -i 'arn:aws' | awk '{print $2}')
+```
 ## Creating our Amazon Elasticsearch cluster with Cognito integration
 
 In this repository you will find a CloudFormation template that will create all the components that we need to integrate Amazon Elasticsearch with Amazon Cognito.
 
+
 ```shell
 aws cloudformation create-stack \
     --stack-name kubelogs-es-stack \
-    --template-body file://cludformation/stack.yaml \
+    --template-body file://cloudformation/stack.yaml \
     --capabilities CAPABILITY_IAM \
     --region us-east-1 \
-    --parameters ParameterKey=ArnFluentBit,ParameterValue={FLUENT_BIT_ROLE_ARN}
+    --parameters ParameterKey=ArnFluentBit,ParameterValue=${FLUENT_BIT_ROLE_ARN}
 ```
 
 ## Create Fluent-bit DaemonSet on Amazon EKS
