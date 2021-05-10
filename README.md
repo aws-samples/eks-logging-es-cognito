@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 # Kubernetes Log Shipping
 
 This demonstration has the purpose of presenting how you can easyly integrate EKS logs with Amazon Elasticsearch service and secure the access to the logs using Amazon Cognito.
@@ -195,15 +194,6 @@ If you want to add MFA to your cognito User Pool, follow this [link](./auth_flow
 
 https://docs.aws.amazon.com/elasticsearch-service/latest/developerguide/es-cognito-auth.html
 https://github.com/aws-samples/amazon-elasticsearch-service-with-cognito/
-=======
-## My Project
-
-TODO: Fill this README out!
-
-Be sure to:
-
-* Change the title in this README
-* Edit your repository description on GitHub
 
 ## Security
 
@@ -213,4 +203,3 @@ See [CONTRIBUTING](CONTRIBUTING.md#security-issue-notifications) for more inform
 
 This library is licensed under the MIT-0 License. See the LICENSE file.
 
->>>>>>> 3038fc2efdb32ecad57b95601fa8f8b9d7bf82fa
