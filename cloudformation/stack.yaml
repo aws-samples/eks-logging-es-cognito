@@ -1,0 +1,135 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: Stack to provision ElasticSearch integrated with Amazon Cognito
+
+Parameters:
+  ArnFluentBit:
+    Type: String
+    Description: ARN of fluent-bit role
+
+Resources:
+  # User Pool to store User Information
+  UserPool:
+    Type: AWS::Cognito::UserPool
+    Properties:
+      UserPoolName: "KibanaUsers"
+      AdminCreateUserConfig:
+        AllowAdminCreateUserOnly: true
+      UsernameAttributes:
+        - email
+      AutoVerifiedAttributes:
+        - email
+      Policies:
+        PasswordPolicy:
+          MinimumLength: 8
+      Schema:
+        - Name: email
+          AttributeDataType: String
+          DeveloperOnlyAttribute: false
+          Mutable: true
+          Required: true
+  
+  UserPoolDomain:
+    Type: AWS::Cognito::UserPoolDomain
+    Properties: 
+      Domain: kubelogdomainewqyu
+      UserPoolId: !Ref UserPool
+
+  # Indentity Pool to assume role and Access Kibana
+  IdentityPool:
+    Type: AWS::Cognito::IdentityPool
+    Properties:
+      IdentityPoolName: "KibanaIDPool"
+      AllowUnauthenticatedIdentities: true
+      # CognitoIdentityProviders:
+      #   - ClientId: !Ref UserPoolClient
+      #     ProviderName: !Sub "cognito-idp.${AWS::Region}.amazonaws.com/${UserPool}"
+
+  AuthenticatedPolicy:
+    Type: AWS::IAM::ManagedPolicy
+    Properties:
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: "Allow"
+            Action:
+              - "es:ESHttp*"
+            Resource:
+              - "*"
+              
+  AuthenticatedRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Action: "sts:AssumeRoleWithWebIdentity"
+            Principal:
+              Federated: cognito-identity.amazonaws.com
+            Condition:
+              StringEquals:
+                "cognito-identity.amazonaws.com:aud": !Ref IdentityPool
+              ForAnyValue:StringLike:
+                "cognito-identity.amazonaws.com:amr": authenticated
+      ManagedPolicyArns: 
+        - !Ref AuthenticatedPolicy
+        
+  RoleAttachment:
+    Type: AWS::Cognito::IdentityPoolRoleAttachment
+    Properties:
+      IdentityPoolId: !Ref IdentityPool
+      Roles:
+        authenticated: !GetAtt AuthenticatedRole.Arn
+
+  EsIamRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - es.amazonaws.com
+            Action:
+              - 'sts:AssumeRole'
+      Path: /
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AmazonESCognitoAccess
+      
+  # ElasticSearch Creation https://docs.aws.amazon.com/pt_br/AWSCloudFormation/latest/UserGuide/aws-resource-elasticsearch-domain.html
+  ElasticSearchDomain:
+    Type: AWS::Elasticsearch::Domain
+    Properties:
+      DomainName: es-eks-log-demo
+      EBSOptions:
+        EBSEnabled: true
+        VolumeSize: 30
+        VolumeType: gp2
+      ElasticsearchClusterConfig:
+        DedicatedMasterEnabled: false
+        InstanceCount: 3
+        InstanceType: t2.medium.elasticsearch
+      CognitoOptions:
+        Enabled: True
+        IdentityPoolId: !Ref IdentityPool
+        RoleArn: !GetAtt EsIamRole.Arn
+        UserPoolId: !Ref UserPool
+      ElasticsearchVersion: '7.9'
+      AccessPolicies:
+        Version: '2012-10-17'
+        Statement:
+        - Effect: Allow
+          Principal:
+            AWS: !Ref ArnFluentBit
+          Action: 'es:*'
+          Resource: !Sub 'arn:aws:es:${AWS::Region}:${AWS::AccountId}:domain/es-eks-log-demo/*'
+    DependsOn: UserPool  
+
+Outputs:
+  UserPoolId:
+    Value: !Ref UserPool
+  UserPoolArn:
+    Value: !GetAtt UserPool.Arn
+  IdentityPoolId:
+    Value: !Ref IdentityPool
